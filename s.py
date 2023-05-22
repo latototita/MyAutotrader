@@ -10,11 +10,11 @@ token = os.getenv('TOKEN') or 'eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2
 accountId = os.getenv('ACCOUNT_ID') or '44d6fa31-2cd5-4aaa-b5ed-8189b2d4a0b5'
 
 # Define parameters
-symbol_list = ['XAUUSDm', 'GBPUSDm', 'XAGUSDm', 'AUDUSDm', 'EURUSDm', 'USDJPYm', 'GBPTRYm','AUDCADm','AUDCHFm','AUDJPYm','CADJPYm','CHFJPYm','EURCADm', 'EURAUDm','EURCHFm','EURGBPm','EURJPYm','GBPAUDm','GBPCADm', 'GBPCHFm','GBPJPYm']
+symbol_list = ['XAUUSDm', 'GBPUSDm', 'XAGUSDm', 'AUDUSDm', 'EURUSDm', 'USDJPYm', 'GBPTRYm','AUDCADm','AUDCHFm','AUDJPYm','CADJPYm','CHFJPYm','EURCADm', 'EURAUDm','EURCHFm','EURGBPm','EURJPYm','GBPAUDm','GBPCADm', 'GBPCHFm','GBPJPYm','UK100m','HK50m','ADAUSDm','BATUSDm','BTCJPYm','BTCKRWm','BTCUSDm','DOTUSDm','ENJUSDm','FILUSDm','SNXUSDm']
 rsi_period = 14
 smi_period = 14
 atr_period = 14
-atr_multiplier = 4.0
+atr_multiplier = 3.0
 bollinger_period = 20
 bollinger_std = 2
 ema_period = 20
@@ -225,8 +225,8 @@ async def main():
                                     take_profit,
                                     {'trailingStopLoss': {
                                             'distance': {
-                                                'distance': 2,
-                                                'units':'RELATIVE_BALANCE_PERCENTAGE'
+                                                'distance': 3,
+                                                'units':'RELATIVE_PIPS'
                                             }
                                         }
                                     })
@@ -261,8 +261,8 @@ async def main():
                                     take_profit,
                                     {'trailingStopLoss': {
                                             'distance': {
-                                                'distance': 2,
-                                                'units':'RELATIVE_BALANCE_PERCENTAGE'
+                                                'distance': 3,
+                                                'units':'RELATIVE_PIPS'
                                             }
                                         }
                                     })
