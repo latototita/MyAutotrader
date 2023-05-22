@@ -8,7 +8,8 @@ import pandas as pd
 # Initialize MetaApi client
 token = os.getenv('TOKEN') or 'eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2YjI0NTQ0ZWYzMWI0NzQ4NWMxNzQ1NmUzNzdmYTlhZiIsInBlcm1pc3Npb25zIjpbXSwidG9rZW5JZCI6IjIwMjEwMjEzIiwiaW1wZXJzb25hdGVkIjpmYWxzZSwicmVhbFVzZXJJZCI6IjZiMjQ1NDRlZjMxYjQ3NDg1YzE3NDU2ZTM3N2ZhOWFmIiwiaWF0IjoxNjgzOTcwNDk4fQ.XzOt-R6egTLGb0fpmbxzDrLHqqlSbqdskeX3OSbx585bi_jG9BhSp-PtEyZ4kqJBafXcGmGRa8IMYQ6BMtDRmoiUd6InEjioBhPlKa6wrylTruPK6_YYq3LsZGd-GctHqW5-_pv3UtKyYriHO-P61dE-zpH6AAAO-NeAru-GKvOQeNwhwSVW_Q8Ov6Q6dljt0q9psxZYOU2jZiR1N3d0d_pQpvKLCgXFk71TL93GyEj-7csQ5Z0py0ChVioeWY7Cf-MlzEJdnSFgcHeFaKfny680C-5srBJwCO4EBVSEEqJao71fhnnK7UsW_QVMUoamVEBvbxD2Wr0F2pHcdIkVUoMrJeNiWdCTvdEONsg9xMFREqGdvlx66khNhvOpVvK_obsSEwMUS7Qvk3-3yh5F7PaT0qsQW4WdZVRaTLbayA7ChbYqCGvp4EAA4mxYTSxWjihDFCWHy6QWmHVzDw5JzhUxus-bWtOTiVVGUjg5e5uPNSHYUzN2D0Pl4p6QxnGISQCmRTuNtbEEm_9yLF_5xuRAdQez1VS0rYP0x3YauLmLIdhpmNKjNNfi13uAiwJVmjIj__9VDALqiGje25WFWr9BLQCUZdemGHe4q9bc2IcAjSZIo6auI6aVqkGwm7UpkHat_FMTxynZnhDNkrGebjgvuW4_1nbmWVUGZ4y2mTc'
 accountId = os.getenv('ACCOUNT_ID') or '44d6fa31-2cd5-4aaa-b5ed-8189b2d4a0b5'
-
+timeframe='1m'
+candlesn=1000000
 # Define parameters
 symbol_list = ['XAUUSDm', 'GBPUSDm', 'XAGUSDm', 'AUDUSDm', 'EURUSDm', 'USDJPYm', 'GBPTRYm','AUDCADm','AUDCHFm','AUDJPYm','CADJPYm','CHFJPYm','EURCADm', 'EURAUDm','EURCHFm','EURGBPm','EURJPYm','GBPAUDm','GBPCADm', 'GBPCHFm','GBPJPYm','UK100m','HK50m','ADAUSDm','BATUSDm','BTCJPYm','BTCKRWm','BTCUSDm','DOTUSDm','ENJUSDm','FILUSDm','SNXUSDm']
 rsi_period = 14
@@ -19,7 +20,10 @@ bollinger_period = 20
 bollinger_std = 2
 ema_period = 20
 adx_period = 14
-
+def calculate_sma(data, window_size):
+    weights = np.repeat(1.0, window_size) / window_size
+    sma = np.convolve(data, weights, 'valid')
+    return sma
 def calculate_adx(high_prices, low_prices, close_prices, period=14):
     # Calculate True Range (TR)
     tr1 = high_prices - low_prices
@@ -148,6 +152,8 @@ async def main():
                     low_prices = np.array([candle['low'] for candle in candles])
                     close_prices = np.array([candle['close'] for candle in candles])
                     ichimoku = ichimoku_cloud_strategy(high_prices, low_prices, close_prices)
+                    sma_50 = calculate_sma(close_prices, 50)
+                    sma_200 = calculate_sma(close_prices, 200)
                     # smi number 1
                     df['smi_ema'] = ta.ema(df['close'], length=smi_period)
                     # rsi number 2
@@ -179,7 +185,7 @@ async def main():
                     ) and (
                         close_prices[-1] > df['ema'][-1]
                     )and (
-                        adx[-1]> 25)
+                        adx[-1]> 25) and (sma_50[-1] > sma_200[-1] and sma_50[-2] < sma_200[-2])
                         
                         
                     sell_signal = (
@@ -195,7 +201,7 @@ async def main():
                     ) and (
                         close_prices[-1] < df['ema'][-1]
                     ) and (
-                        adx[-1]> 25)
+                        adx[-1]> 25) and (sma_50[-1] < sma_200[-1] and sma_50[-2] > sma_200[-2])
                     print('B n S teated')
                     # Execute trading orders
                     prices = await connection.get_symbol_price(symbol)
