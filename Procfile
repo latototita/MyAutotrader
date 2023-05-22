@@ -1,1 +1,1 @@
-worker: python m.py
+worker: python s.py
