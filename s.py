@@ -231,7 +231,7 @@ async def main():
                                     take_profit,
                                     {'trailingStopLoss': {
                                             'distance': {
-                                                'distance': 3,
+                                                'distance': 4,
                                                 'units':'RELATIVE_PIPS'
                                             }
                                         }
@@ -268,7 +268,7 @@ async def main():
                                     take_profit,
                                     {'trailingStopLoss': {
                                             'distance': {
-                                                'distance': 3,
+                                                'distance': 4,
                                                 'units':'RELATIVE_PIPS'
                                             }
                                         }
