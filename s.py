@@ -239,7 +239,7 @@ async def main():
                             print(api.format_error(err))
                     if sell_signal==True:
                         # Calculate prices at pips above and below the current price
-                        take_profit = current_price - (atr[-1] * float(7.0)
+                        take_profit = current_price - (atr[-1] * float(7.0))
                         stop_loss = current_price + (atr[-1] * atr_multiplier)
                         try:
                             # calculate margin required for trade
