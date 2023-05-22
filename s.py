@@ -14,7 +14,7 @@ symbol_list = ['XAUUSDm', 'GBPUSDm', 'XAGUSDm', 'AUDUSDm', 'EURUSDm', 'USDJPYm',
 rsi_period = 14
 smi_period = 14
 atr_period = 14
-atr_multiplier = 3.0
+atr_multiplier = 6.0
 bollinger_period = 20
 bollinger_std = 2
 ema_period = 20
@@ -203,7 +203,7 @@ async def main():
                     if buy_signal==True:
                         # Calculate prices at pips above and below the current price
                         print('take profit starting')
-                        take_profit = current_price + (atr[-1] * float(4.0))
+                        take_profit = current_price + (atr[-1] * float(7.0))
                         stop_loss = current_price - (atr[-1] * atr_multiplier)
                         print('calculations ended')
                         try:
@@ -239,7 +239,7 @@ async def main():
                             print(api.format_error(err))
                     if sell_signal==True:
                         # Calculate prices at pips above and below the current price
-                        take_profit = current_price - (atr[-1] * atr_multiplier)
+                        take_profit = current_price - (atr[-1] * float(7.0)
                         stop_loss = current_price + (atr[-1] * atr_multiplier)
                         try:
                             # calculate margin required for trade
