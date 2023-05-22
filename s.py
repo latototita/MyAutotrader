@@ -275,6 +275,7 @@ async def main():
                     if trades:
                         print("There are open trades. Skipping analysis.")
                         break
-            await asyncio.sleep(60)  # Sleep for 1 minute before the next iteration
+                    await asyncio.sleep(240)
+            await asyncio.sleep(600)  # Sleep for 1 minute before the next iteration
         await asyncio.sleep(60)  # Sleep for 1 minute before the next iteration
 asyncio.run(main())
