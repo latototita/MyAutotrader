@@ -176,7 +176,7 @@ async def main():
                     buy_signal = (
                         df['close'][-1] > df['smi_ema'][-1]
                     ) and (
-                        df['rsi'][-1] <30
+                        df['rsi'][-1] <40
                     ) and (
                         ichimoku =="Buy Signal"
                     ) and(
@@ -191,7 +191,7 @@ async def main():
                     sell_signal = (
                         df['close'][-1] < df['smi_ema'][-1]
                     ) and (
-                        df['rsi'][-1] >70
+                        df['rsi'][-1] >60
                     ) and (
                         ichimoku=="Sell Signal"
                     ) and (
