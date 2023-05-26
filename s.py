@@ -184,7 +184,7 @@ async def main():
                         close_pricesb[-2] < upper_band[-2]
                     ) and (
                         close_prices[-1] > df['ema'][-1]
-                    ) and (sma_50[-1] > sma_200[-1] and sma_50[-2] < sma_200[-2])
+                    ) #and (sma_50[-1] > sma_200[-1] and sma_50[-2] < sma_200[-2])
                         
                         
                     sell_signal = (
@@ -199,7 +199,7 @@ async def main():
                         close_prices[-2] > lower_band[-2]
                     ) and (
                         close_prices[-1] < df['ema'][-1]
-                    ) and (sma_50[-1] < sma_200[-1] and sma_50[-2] > sma_200[-2])
+                    ) #and (sma_50[-1] < sma_200[-1] and sma_50[-2] > sma_200[-2])
                     print('B n S teated')
                     # Execute trading orders
                     prices = await connection.get_symbol_price(symbol)
