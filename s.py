@@ -10,6 +10,10 @@ token = os.getenv('TOKEN') or 'eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2
 accountId = os.getenv('ACCOUNT_ID') or '615ae0df-2198-4162-9b23-34a4285baa35'
 timeframe='1m'
 candlesn=1000000
+n_fast = 3
+n_slow = 6
+n_signal = 4
+
 # Define parameters
 symbol_list = ['XAUUSDm', 'GBPUSDm', 'XAGUSDm', 'AUDUSDm', 'EURUSDm', 'USDJPYm', 'GBPTRYm','AUDCADm','AUDCHFm','AUDJPYm','CADJPYm','CHFJPYm','EURCADm', 'EURAUDm','EURCHFm','EURGBPm','EURJPYm','GBPAUDm','GBPCADm', 'GBPCHFm','GBPJPYm','UK100m','HK50m','ADAUSDm','BATUSDm','BTCJPYm','BTCKRWm','BTCUSDm','DOTUSDm','ENJUSDm','FILUSDm','SNXUSDm']
 rsi_period = 14
@@ -20,44 +24,87 @@ bollinger_period = 20
 bollinger_std = 2
 ema_period = 20
 adx_period = 14
+def calculate_macd(candlestick_data, n_fast, n_slow, n_signal):
+    # Extract closing prices from the candlestick data
+    closing_prices= np.array([candle['close'] for candle in candlestick_data])
+
+    # Calculate the short-term exponential moving average (EMA)
+    ema_fast = calculate_ema(closing_prices, n_fast)
+
+    # Calculate the long-term exponential moving average (EMA)
+    ema_slow = calculate_ema(closing_prices, n_slow)
+
+    # Calculate the MACD line
+    macd_line = ema_fast - ema_slow
+
+    # Calculate the signal line (n-period EMA of MACD line)
+    signal_line = calculate_ema(macd_line, n_signal)
+
+    # Calculate the MACD histogram
+    macd_histogram = macd_line - signal_line
+
+    return macd_line, signal_line
 def calculate_sma(data, window_size):
     weights = np.repeat(1.0, window_size) / window_size
     sma = np.convolve(data, weights, 'valid')
     return sma
-def calculate_adx(high_prices, low_prices, close_prices, period=14):
+def calculate_ema(data, n):
+    # Calculate the smoothing factor
+    alpha = 2 / (n + 1)
+
+    # Calculate the initial EMA as the first data point
+    ema = np.array([data[0]])
+
+    # Calculate the subsequent EMAs
+    for i in range(1, len(data)):
+        ema = np.append(ema, alpha * data[i] + (1 - alpha) * ema[-1])
+
+    return ema
+def calculate_adx(high, low, close, period=14):
     # Calculate True Range (TR)
-    tr1 = high_prices - low_prices
-    tr2 = np.abs(high_prices- np.roll(close_prices, 1))
-    tr3 = np.abs(low_prices - np.roll(close_prices, 1))
-    tr = np.maximum(tr1, np.maximum(tr2, tr3))
+    tr1 = np.abs(high - low)
+    tr2 = np.abs(high - np.roll(close, 1))
+    tr3 = np.abs(low - np.roll(close, 1))
+    tr = np.maximum.reduce([tr1, tr2, tr3])
 
-    # Calculate Directional Movement (+DM and -DM)
-    up_move = high_prices- np.roll(high_prices, 1)
-    down_move = np.roll(low_prices, 1) - low_prices
-    up_move = np.where((up_move > 0) & (up_move > down_move), up_move, 0.0)
+    # Calculate +DM and -DM
+    up_move = high - np.roll(high, 1)
+    down_move = np.roll(low, 1) - low
     up_move[(up_move <= 0) | (up_move <= down_move)] = 0.0
-    minus_dm = np.where((down_move > 0) & (down_move > up_move), down_move, 0.0)
-    minus_dm[(down_move <= 0) | (down_move <= up_move)] = 0.0
+    down_move[(down_move <= 0) | (down_move <= up_move)] = 0.0
 
-    plus_dm = np.where((up_move > 0) & (up_move > down_move), up_move, 0.0)
+    # Calculate True Range (TR) EMA
+    tr_ema = np.convolve(tr, np.ones(period), mode='valid') / period
 
-
-    # Smooth True Range and Directional Movement
-    smoothed_tr = np.convolve(tr, np.ones(period), mode='valid') / period
-    smoothed_plus_dm = np.convolve(plus_dm, np.ones(period), mode='valid') / period
-    smoothed_minus_dm = np.convolve(minus_dm, np.ones(period), mode='valid') / period
-
-    # Calculate +DI and -DIo
-    plus_di = (smoothed_plus_dm / smoothed_tr) * 100
-    minus_di = (smoothed_minus_dm / smoothed_tr) * 100
+    # Calculate Directional Movement Index (DMI)
+    plus_di = (np.convolve(up_move, np.ones(period), mode='valid') / tr_ema) * 100
+    minus_di = (np.convolve(down_move, np.ones(period), mode='valid') / tr_ema) * 100
 
     # Calculate DX
     dx = (np.abs(plus_di - minus_di) / (plus_di + minus_di)) * 100
 
-    # Smooth DX to calculate ADX
+    # Pad DX array to match the length of input arrays
+    dx = np.concatenate((np.full(period-1, np.nan), dx))
+
+    # Calculate ADX
     adx = np.convolve(dx, np.ones(period), mode='valid') / period
 
+    # Pad ADX array to match the length of input arrays
+    adx = np.concatenate((np.full(period-1, np.nan), adx))
+
     return adx
+def calculate_volatility(candles):
+    # Extracting high and low prices from the candlestick data
+    highs = np.array([candle['high'] for candle in candles])
+    lows = np.array([candle['low'] for candle in candles])
+    
+    # Calculating the range (difference) between high and low prices
+    ranges = highs - lows
+    
+    # Calculating volatility as the standard deviation of the price ranges
+    volatility = np.std(ranges)
+    
+    return volatility
 
 def calculate_ichimoku_cloud(high_prices, low_prices, conversion_period=9, base_period=26, leading_span_b_period=52, displacement=26):
     # Tenkan-sen (Conversion Line)
@@ -166,7 +213,8 @@ async def main():
                     # ema number 4
                     df['ema'] = ta.ema(df['close'], length=ema_period)
                     # adx number 5
-                    adx = calculate_adx(high_prices, low_prices, close_prices)
+                    macd_line, signal_line = calculate_macd(candles, n_fast, n_slow, n_signal)
+                    adx = calculate_adx(high=high_prices,low=low_prices,close=close_prices)
                     # Perform trading logic using Bollinger Bands
                     upper_band = df['bollinger_upper'].values
                     lower_band = df['bollinger_lower'].values
@@ -176,8 +224,12 @@ async def main():
                     buy_signal = (
                         df['close'][-1] > df['smi_ema'][-1]
                     ) and (
+                        macd_line>0
+                    ) and(
                         df['rsi'][-1] <30
                     ) and (
+                        adx[-1]>25
+                    ) and(
                         ichimoku =="Buy Signal"
                     ) and(
                         close_pricesb[-1] > upper_band[-1] and 
@@ -190,6 +242,11 @@ async def main():
                     sell_signal = (
                         df['close'][-1] < df['smi_ema'][-1]
                     ) and (
+                        macd_line<0
+                    ) and( 
+                        adx[-1]>25
+                    ) and(
+
                         df['rsi'][-1] >70
                     ) and (
                         ichimoku=="Sell Signal"
